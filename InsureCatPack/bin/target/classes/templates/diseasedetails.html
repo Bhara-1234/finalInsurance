@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disease List</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+<input type="hidden" th:value="${inspId}" id="inspId">
+    <div class="container mt-5">
+		<h1>Disease Master Entry</h1><br>
+		<h3>Add New Disease</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Disease Name</th>
+                    <th>ICD Code</th>
+                    <th>Description</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="text" id="nameVal" class="form-control" value=""></td>
+                    <td><input type="text" id="ICDCodeVal" class="form-control" value=""></td>
+                    <td><input type="text" id="DescriptionVal" class="form-control" value=""></td>
+                    <td><button onclick="addNewRecord()" class="btn btn-primary">Save Record</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Disease List</h3><br>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>ICD Code</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- private int diseaseId;
+private String diseaseName;
+private String icdCode;
+private String diseaseDiscription;
+private String diseaseStatus; -->
+                <tr th:each="disease : ${diseases}">
+                    <td th:text="${disease.diseaseId}"></td>
+                    <td th:text="${disease.diseaseName}"></td>
+                    <td th:text="${disease.icdCode}"></td>
+                    <td th:text="${disease.diseaseDiscription}"></td>
+                    <td th:text="${disease.diseaseStatus}"></td>
+                    <td>
+                        <button th:onclick="editDisease(this)" class="btn btn-success">Edit</button>
+                        <button th:onclick="deleteDisease(this)" class="btn btn-danger">Delete</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Include Bootstrap JS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    	<script>
+		function addNewRecord(){
+			var name = document.getElementById("nameVal").value;
+			var ICDCode = document.getElementById("ICDCodeVal").value;
+			var Description = document.getElementById("DescriptionVal").value;
+			var inspId = document.getElementById("inspId").value;
+			console.log(inspId);
+			$.ajax({
+				url : "/addDisease?name=" + encodeURIComponent(name) + "&ICDCode=" + encodeURIComponent(ICDCode) + "&Description=" + encodeURIComponent(Description) + "&inspId=" + encodeURIComponent(inspId)
+,
+				method : "POST",
+				success : function(message){
+					//window.alert(message);
+					location.reload();
+				},
+				error : function(xhr, status, error){
+					console.error("Error Occured: ", status, error);
+				}
+			});
+		}
+		
+		function editDisease(buttonElement) {
+			var parentRow = buttonElement.parentNode.parentNode;
+
+			var Id = parentRow.cells[0].textContent;
+			var name = parentRow.cells[1].textContent;
+			var ICDCode = parentRow.cells[2].textContent;
+			var Description = parentRow.cells[3].textContent;
+			var status = parentRow.cells[4].textContent;
+
+			parentRow.removeChild(parentRow.cells[2]); // Remove cell 2 again to adjust for removed cell
+			parentRow.removeChild(parentRow.cells[2]); // Remove cell 3
+			parentRow.removeChild(parentRow.cells[2]); // Remove cell 4
+			parentRow.removeChild(parentRow.cells[2]); // Remove cell 5
+
+			var cell2 = document.createElement("td");
+			var cell21 = document.createElement("input");
+			cell21.setAttribute("id", "ICDCode");
+			cell21.setAttribute("name", "ICDCode");
+			cell21.setAttribute("value", ICDCode);
+			cell21.setAttribute("class", "form-control");
+			cell2.appendChild(cell21);
+
+			var cell3 = document.createElement("td");
+			var cell31 = document.createElement("input");
+			cell31.setAttribute("id", "Description");
+			cell31.setAttribute("name", "Description");
+			cell31.setAttribute("value", Description);
+			cell31.setAttribute("class", "form-control");
+			cell3.appendChild(cell31);
+
+			var cell4 = document.createElement("td");
+			cell4.innerHTML = `
+				<select id="updateStatus" name="status" class="form-control">
+					<option value="Active"> Active </option>
+					<option value="InActive"> InActive </option>
+				</select>
+			`;
+			
+
+			var cell5 = document.createElement("td");
+			cell5.innerHTML = `
+				<button onclick="saveDisease(this)" class="edit-button btn btn-primary">Save</button>
+				<button onclick="deleteDisease(this)" class="delete-button btn btn-danger">Delete</button>
+			`;
+
+			parentRow.appendChild(cell2);
+			parentRow.appendChild(cell3);
+			parentRow.appendChild(cell4);
+			parentRow.appendChild(cell5);
+		}
+
+		function deleteDisease(buttonElement) {
+			
+			var parentRow = buttonElement.parentNode.parentNode;
+			var did = parentRow.cells[0].textContent;
+			var inspId = document.getElementById("inspId").value;
+			console.log(did);
+			
+			$.ajax({
+				url : "/deleteDisease?did=" + did + "&inspId=" + encodeURIComponent(inspId),
+				method : "POST",
+				success : function(message){
+					//window.alert(message);
+					location.reload();
+				},
+				error : function(xhr, status, error){
+					console.error("Error Occured: ", status, error);
+				}
+			});
+		}
+
+		function saveDisease(buttonElement) {
+			
+			var parentRow = buttonElement.parentNode.parentNode;
+			var inspId = document.getElementById("inspId").value;
+
+			var Id = parentRow.cells[0].textContent;
+			var name = parentRow.cells[1].textContent;
+			var ICDCode = parentRow.cells[2].firstChild.value;
+			var Description = parentRow.cells[3].firstChild.value;
+			var status = document.getElementById("updateStatus").value;
+			
+			$.ajax({
+				url : "/editDisease?name=" + name + "&ICDCode=" + ICDCode + "&Description=" + Description + "&Status=" + status+ "&inspId=" + encodeURIComponent(inspId),
+				method : "POST",
+				success : function(message){
+					//window.alert(message);
+					location.reload();
+				},
+				error : function(xhr, status, error){
+					console.error("Error Occured: ", status, error);
+				}
+			});
+		}
+		
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Categories List</title>
+	<!-- Include Bootstrap CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+	<style>
+		/* Apply styles to the container */
+		.container {
+			margin-top: 20px;
+		}
+
+		/* Apply styles to the header */
+		h1 {
+			font-size: 24px;
+			background-color: #333;
+			color: #fff;
+			padding: 10px;
+			text-align: center;
+		}
+
+		/* Apply styles to the tables */
+		table {
+			width: 100%;
+		}
+
+		/* Apply styles to table headers */
+		th {
+			background-color: #333;
+			color: #fff;
+			padding: 10px;
+		}
+
+		/* Apply styles to table cells */
+		td {
+			padding: 10px;
+		}
+
+		/* Apply styles to input fields */
+		input[type="text"],
+		select {
+			width: 100%;
+			padding: 8px;
+		}
+
+		/* Apply styles to action buttons */
+		.btn {
+			margin: 5px;
+		}
+
+		/* Apply styles to Save and Delete buttons */
+		.edit-button,
+		.delete-button {
+			padding: 6px 12px;
+		}
+	</style>
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+
+
+
+<body>
+	<input type="hidden" th:value="${inspId}" id="inspId">
+	<div class="container mt-5">
+		<h1 class="header">Categories Master Entry</h1> <!-- Modified the header -->
+		<br>
+		<h3>Add New Category</h3>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Title</th>
+					<th>Description</th>
+					<th>Action</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><input type="text" id="Title" class="form-control" value="" required></td>
+					<td><input type="text" id="DescriptionVal" class="form-control" value="" required></td>
+					<td><button onclick="addNewRecord()" class="btn btn-primary">Save Record</button></td>
+				</tr>
+			</tbody>
+		</table>
+		<h3>Categories List</h3>
+		<br>
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th>Category Id</th>
+					<th>Title</th>
+					<th>Description</th>
+					<th>Status</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				<!-- Disease data loop -->
+				<tr th:each="category : ${categories}">
+					<td th:text="${category.categoryId}"></td>
+					<td th:text="${category.categoryTitle}"></td>
+					<td th:text="${category.categoryDescription}"></td>
+					<td th:text="${category.categoryStatus}"></td>
+					<td>
+						<button th:onclick="editCategory(this)" class="btn btn-success">Edit</button>
+						<button th:onclick="deleteCategory(this)" class="btn btn-danger">Delete</button>
+					</td>
+				</tr>
+				<!-- End of disease data loop -->
+			</tbody>
+		</table>
+	</div>
+
+	<!-- Include Bootstrap JS -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+	<script>
+		function addNewRecord() {
+			var Title = document.getElementById("Title").value;
+			var Description = document.getElementById("DescriptionVal").value;
+			var inspId = document.getElementById("inspId").value;
+
+			// AJAX request to add a new disease
+			$.ajax({
+				url: "/addCategory?Title=" + encodeURIComponent(Title) + "&Description=" + encodeURIComponent(Description) + "&inspId=" + encodeURIComponent(inspId),
+				method: "POST",
+				success: function (message) {
+					// Refresh the page after successful addition
+					location.reload();
+				},
+				error: function (xhr, status, error) {
+					console.error("Error Occurred: ", status, error);
+				}
+			});
+		}
+
+		function editCategory(buttonElement) {
+			var parentRow = buttonElement.parentNode.parentNode;
+
+			var Id = parentRow.cells[0].textContent;
+			var Title = parentRow.cells[1].textContent;
+			var Description = parentRow.cells[2].textContent;
+			var status = parentRow.cells[3].textContent;
+
+			// Remove existing cells and add input fields for editing
+			parentRow.removeChild(parentRow.cells[2]);
+			parentRow.removeChild(parentRow.cells[2]);
+			parentRow.removeChild(parentRow.cells[2]);
+
+
+			var cell3 = document.createElement("td");
+			var cell31 = document.createElement("input");
+			cell31.setAttribute("id", "Description");
+			cell31.setAttribute("name", "Description");
+			cell31.setAttribute("value", Description);
+			cell31.setAttribute("class", "form-control");
+			cell3.appendChild(cell31);
+
+			var cell4 = document.createElement("td");
+			cell4.innerHTML = `
+                <select id="updateStatus" name="status" class="form-control">
+                    <option value="AC"> AC </option>
+                    <option value="NA"> NA </option>
+                </select>
+            `;
+
+			var cell5 = document.createElement("td");
+			cell5.innerHTML = `
+                <button onclick="saveCategory(this)" class="edit-button btn btn-primary">Save</button>
+                <button onclick="deleteCategory(this)" class="delete-button btn btn-danger">Delete</button>
+            `;
+
+			parentRow.appendChild(cell3);
+			parentRow.appendChild(cell4);
+			parentRow.appendChild(cell5);
+		}
+
+		function deleteCategory(buttonElement) {
+			var parentRow = buttonElement.parentNode.parentNode;
+			var cid = parentRow.cells[0].textContent;
+			var inspId = document.getElementById("inspId").value;
+
+			// AJAX request to delete a disease
+			$.ajax({
+				url: "/deleteCategory?cid=" + cid + "&inspId=" + encodeURIComponent(inspId),
+				method: "POST",
+				success: function (message) {
+					// Refresh the page after successful deletion
+					location.reload();
+				},
+				error: function (xhr, status, error) {
+					console.error("Error Occurred: ", status, error);
+				}
+			});
+		}
+
+		function saveCategory(buttonElement) {
+			var parentRow = buttonElement.parentNode.parentNode;
+			var inspId = document.getElementById("inspId").value;
+
+			var Id = parentRow.cells[0].textContent;
+			var Title = parentRow.cells[1].textContent;
+			var Description = parentRow.cells[2].firstChild.value;
+			var status = document.getElementById("updateStatus").value;
+			
+			console.log(Id + " " + Title + " " + status);
+			// AJAX request to save edited disease
+			$.ajax({
+				url: "/editCategory?Title=" + Title + "&Description=" + Description + "&Status=" + status + "&inspId=" + encodeURIComponent(inspId),
+				method: "POST",
+				success: function (message) {
+					// Refresh the page after successful save
+					location.reload();
+				},
+				error: function (xhr, status, error) {
+					console.error("Error Occurred: ", status, error);
+				}
+			});
+		}
+	</script>
+</body>
+
+</html>
